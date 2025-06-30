@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
-import { Search, Radio, Battery, MapPin, Settings, Plus, AlertTriangle } from 'lucide-react';
+import { Search, Radio, Battery, MapPin, Settings, Plus, AlertTriangle, Edit, Trash2, Eye } from 'lucide-react';
 import { mockBeacons } from '../../data/mockData';
 import { Beacon } from '../../types';
+import BeaconModal from './BeaconModal';
 
 const BeaconManagement: React.FC = () => {
   const [beacons, setBeacons] = useState<Beacon[]>(mockBeacons);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [zoneFilter, setZoneFilter] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBeacon, setEditingBeacon] = useState<Beacon | null>(null);
 
   const filteredBeacons = beacons.filter(beacon => {
     const matchesSearch = beacon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          beacon.zoneName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          beacon.macAddress.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || beacon.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesZone = zoneFilter === 'all' || beacon.zoneName === zoneFilter;
+    return matchesSearch && matchesStatus && matchesZone;
   });
 
   const getStatusColor = (status: string) => {
@@ -41,6 +46,44 @@ const BeaconManagement: React.FC = () => {
     }
     return <Battery className={`w-4 h-4 ${getBatteryColor(level)}`} />;
   };
+
+  const handleCreate = () => {
+    setEditingBeacon(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (beacon: Beacon) => {
+    setEditingBeacon(beacon);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this beacon? This action cannot be undone.')) {
+      setBeacons(prev => prev.filter(beacon => beacon.id !== id));
+    }
+  };
+
+  const handleSave = (beaconData: Partial<Beacon>) => {
+    if (editingBeacon) {
+      setBeacons(prev => prev.map(beacon => 
+        beacon.id === editingBeacon.id 
+          ? { ...beacon, ...beaconData, lastSeen: new Date().toISOString() }
+          : beacon
+      ));
+    } else {
+      const newBeacon: Beacon = {
+        id: `BC${String(beacons.length + 1).padStart(3, '0')}`,
+        lastSeen: new Date().toISOString(),
+        bindingDate: new Date().toISOString().split('T')[0],
+        ...beaconData
+      } as Beacon;
+      setBeacons(prev => [...prev, newBeacon]);
+    }
+    setIsModalOpen(false);
+    setEditingBeacon(null);
+  };
+
+  const zones = [...new Set(beacons.map(beacon => beacon.zoneName))];
 
   return (
     <div className="p-6">
@@ -123,9 +166,23 @@ const BeaconManagement: React.FC = () => {
               <option value="inactive">Inactive</option>
               <option value="maintenance">Maintenance</option>
             </select>
+
+            <select
+              value={zoneFilter}
+              onChange={(e) => setZoneFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Zones</option>
+              {zones.map(zone => (
+                <option key={zone} value={zone}>{zone}</option>
+              ))}
+            </select>
           </div>
           
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="w-4 h-4" />
             Add Beacon
           </button>
@@ -135,7 +192,7 @@ const BeaconManagement: React.FC = () => {
       {/* Beacons Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBeacons.map((beacon) => (
-          <div key={beacon.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div key={beacon.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -179,15 +236,38 @@ const BeaconManagement: React.FC = () => {
 
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
               <button className="flex-1 px-3 py-2 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
-                Configure
+                <Eye className="w-4 h-4 inline mr-1" />
+                View
               </button>
-              <button className="flex-1 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                Details
+              <button 
+                onClick={() => handleEdit(beacon)}
+                className="flex-1 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Edit className="w-4 h-4 inline mr-1" />
+                Edit
+              </button>
+              <button 
+                onClick={() => handleDelete(beacon.id)}
+                className="px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <BeaconModal
+          beacon={editingBeacon}
+          onSave={handleSave}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingBeacon(null);
+          }}
+        />
+      )}
     </div>
   );
 };

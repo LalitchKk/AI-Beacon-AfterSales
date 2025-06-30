@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
-import { Search, AlertTriangle, Package, Plus, RefreshCw } from 'lucide-react';
+import { Search, AlertTriangle, Package, Plus, RefreshCw, Edit, Trash2, Eye } from 'lucide-react';
 import { mockStock } from '../../data/mockData';
 import { Stock } from '../../types';
+import StockModal from './StockModal';
 
 const StockCheck: React.FC = () => {
   const [stock, setStock] = useState<Stock[]>(mockStock);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingStock, setEditingStock] = useState<Stock | null>(null);
 
   const filteredStock = stock.filter(item => {
     const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
   });
 
   const getStatusColor = (status: string) => {
@@ -40,10 +45,51 @@ const StockCheck: React.FC = () => {
     }
   };
 
-  const handleRefreshStock = () => {
-    // Simulate stock refresh
-    console.log('Refreshing stock data...');
+  const handleCreate = () => {
+    setEditingStock(null);
+    setIsModalOpen(true);
   };
+
+  const handleEdit = (stockItem: Stock) => {
+    setEditingStock(stockItem);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this stock item? This action cannot be undone.')) {
+      setStock(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  const handleSave = (stockData: Partial<Stock>) => {
+    if (editingStock) {
+      setStock(prev => prev.map(item => 
+        item.id === editingStock.id 
+          ? { ...item, ...stockData, lastUpdated: new Date().toISOString().split('T')[0] }
+          : item
+      ));
+    } else {
+      const newStock: Stock = {
+        id: `ST${String(stock.length + 1).padStart(3, '0')}`,
+        lastUpdated: new Date().toISOString().split('T')[0],
+        ...stockData
+      } as Stock;
+      setStock(prev => [...prev, newStock]);
+    }
+    setIsModalOpen(false);
+    setEditingStock(null);
+  };
+
+  const handleRefreshStock = () => {
+    console.log('Refreshing stock data...');
+    // Simulate refresh by updating lastUpdated for all items
+    setStock(prev => prev.map(item => ({
+      ...item,
+      lastUpdated: new Date().toISOString().split('T')[0]
+    })));
+  };
+
+  const categories = [...new Set(stock.map(item => item.category))];
 
   return (
     <div className="p-6">
@@ -53,7 +99,7 @@ const StockCheck: React.FC = () => {
       </div>
 
       {/* Stock Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -61,6 +107,18 @@ const StockCheck: React.FC = () => {
               <p className="text-2xl font-bold text-gray-900">{stock.length}</p>
             </div>
             <Package className="w-8 h-8 text-blue-500" />
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">In Stock</p>
+              <p className="text-2xl font-bold text-green-600">
+                {stock.filter(item => item.status === 'in-stock').length}
+              </p>
+            </div>
+            <Package className="w-8 h-8 text-green-500" />
           </div>
         </div>
         
@@ -114,6 +172,17 @@ const StockCheck: React.FC = () => {
               <option value="low-stock">Low Stock</option>
               <option value="out-of-stock">Out of Stock</option>
             </select>
+
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
           </div>
           
           <div className="flex gap-2">
@@ -124,7 +193,10 @@ const StockCheck: React.FC = () => {
               <RefreshCw className="w-4 h-4" />
               Refresh
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
               <Plus className="w-4 h-4" />
               Add Product
             </button>
@@ -155,6 +227,9 @@ const StockCheck: React.FC = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Last Updated
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -191,12 +266,43 @@ const StockCheck: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(item.lastUpdated).toLocaleDateString()}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <button className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded transition-colors">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleEdit(item)}
+                        className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(item.id)}
+                        className="p-1 text-red-600 hover:text-red-900 hover:bg-red-100 rounded transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <StockModal
+          stock={editingStock}
+          onSave={handleSave}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingStock(null);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
-import { Search, Filter, Plus, Eye, Clock, CheckCircle } from 'lucide-react';
+import { Search, Filter, Plus, Eye, Clock, CheckCircle, Edit, Trash2 } from 'lucide-react';
 import { mockBannerRequests } from '../../data/mockData';
 import { BannerRequest } from '../../types';
+import BannerModal from './BannerModal';
 
 const BannerRequests: React.FC = () => {
   const [requests, setRequests] = useState<BannerRequest[]>(mockBannerRequests);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<BannerRequest | null>(null);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.bannerType.toLowerCase().includes(searchTerm.toLowerCase());
+                         request.bannerType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         request.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesPriority = priorityFilter === 'all' || request.priority === priorityFilter;
+    return matchesSearch && matchesStatus && matchesPriority;
   });
 
   const getStatusColor = (status: string) => {
@@ -55,6 +61,41 @@ const BannerRequests: React.FC = () => {
       default:
         return <Clock className="w-4 h-4 text-gray-600" />;
     }
+  };
+
+  const handleCreate = () => {
+    setEditingRequest(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (request: BannerRequest) => {
+    setEditingRequest(request);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this banner request? This action cannot be undone.')) {
+      setRequests(prev => prev.filter(request => request.id !== id));
+    }
+  };
+
+  const handleSave = (requestData: Partial<BannerRequest>) => {
+    if (editingRequest) {
+      setRequests(prev => prev.map(request => 
+        request.id === editingRequest.id 
+          ? { ...request, ...requestData }
+          : request
+      ));
+    } else {
+      const newRequest: BannerRequest = {
+        id: `BR${String(requests.length + 1).padStart(3, '0')}`,
+        requestDate: new Date().toISOString().split('T')[0],
+        ...requestData
+      } as BannerRequest;
+      setRequests(prev => [...prev, newRequest]);
+    }
+    setIsModalOpen(false);
+    setEditingRequest(null);
   };
 
   return (
@@ -139,9 +180,23 @@ const BannerRequests: React.FC = () => {
               <option value="in-production">In Production</option>
               <option value="completed">Completed</option>
             </select>
+
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Priority</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
           </div>
           
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="w-4 h-4" />
             New Request
           </button>
@@ -207,9 +262,23 @@ const BannerRequests: React.FC = () => {
                     {new Date(request.requestDate).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button className="p-1 text-blue-600 hover:text-blue-900">
-                      <Eye className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded transition-colors">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleEdit(request)}
+                        className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(request.id)}
+                        className="p-1 text-red-600 hover:text-red-900 hover:bg-red-100 rounded transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -217,6 +286,18 @@ const BannerRequests: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <BannerModal
+          banner={editingRequest}
+          onSave={handleSave}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingRequest(null);
+          }}
+        />
+      )}
     </div>
   );
 };

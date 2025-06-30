@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { Search, Filter, Plus, Eye, Edit, Download, UserPlus } from 'lucide-react';
+import { Search, Filter, Plus, Eye, Edit, Download, UserPlus, Trash2 } from 'lucide-react';
 import { mockSales } from '../../data/mockData';
 import { Sale } from '../../types';
+import SalesModal from './SalesModal';
 
 const SalesManagement: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>(mockSales);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
 
   const filteredSales = sales.filter(sale => {
     const matchesSearch = sale.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sale.productType.toLowerCase().includes(searchTerm.toLowerCase());
+                         sale.productType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         sale.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -29,10 +33,6 @@ const SalesManagement: React.FC = () => {
   };
 
   const handleAutoCreateAccount = (sale: Sale) => {
-    // Simulate automatic account creation
-    console.log(`Auto-creating account for ${sale.customerName}...`);
-    
-    // Update sale status to show account creation in progress
     setSales(prevSales => 
       prevSales.map(s => 
         s.id === sale.id 
@@ -40,6 +40,42 @@ const SalesManagement: React.FC = () => {
           : s
       )
     );
+  };
+
+  const handleCreate = () => {
+    setEditingSale(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (sale: Sale) => {
+    setEditingSale(sale);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this sale? This action cannot be undone.')) {
+      setSales(prev => prev.filter(sale => sale.id !== id));
+    }
+  };
+
+  const handleSave = (saleData: Partial<Sale>) => {
+    if (editingSale) {
+      setSales(prev => prev.map(sale => 
+        sale.id === editingSale.id 
+          ? { ...sale, ...saleData }
+          : sale
+      ));
+    } else {
+      const newSale: Sale = {
+        id: `S${String(sales.length + 1).padStart(3, '0')}`,
+        saleDate: new Date().toISOString().split('T')[0],
+        accountCreated: false,
+        ...saleData
+      } as Sale;
+      setSales(prev => [...prev, newSale]);
+    }
+    setIsModalOpen(false);
+    setEditingSale(null);
   };
 
   const getAccountStatus = (sale: Sale) => {
@@ -172,7 +208,10 @@ const SalesManagement: React.FC = () => {
               <UserPlus className="w-4 h-4" />
               Auto Create All
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={handleCreate}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
               <Plus className="w-4 h-4" />
               New Sale
             </button>
@@ -253,11 +292,20 @@ const SalesManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center gap-2">
-                      <button className="p-1 text-blue-600 hover:text-blue-900">
+                      <button className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded transition-colors">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-1 text-gray-600 hover:text-gray-900">
+                      <button 
+                        onClick={() => handleEdit(sale)}
+                        className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                      >
                         <Edit className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(sale.id)}
+                        className="p-1 text-red-600 hover:text-red-900 hover:bg-red-100 rounded transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -267,6 +315,18 @@ const SalesManagement: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <SalesModal
+          sale={editingSale}
+          onSave={handleSave}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingSale(null);
+          }}
+        />
+      )}
     </div>
   );
 };
