@@ -7,6 +7,7 @@ import StockCheck from './components/Stock/StockCheck';
 import BannerRequests from './components/Banners/BannerRequests';
 import BeaconManagement from './components/Beacons/BeaconManagement';
 import AccountManagement from './components/Accounts/AccountManagement';
+import LineOAManagement from './components/LineOA/LineOAManagement';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -25,6 +26,8 @@ function App() {
         return <BeaconManagement />;
       case 'accounts':
         return <AccountManagement />;
+      case 'line-oa':
+        return <LineOAManagement />;
       case 'tasks':
         return <div className="p-6"><h1 className="text-2xl font-bold">Task Management</h1><p className="text-gray-600">Task management coming soon...</p></div>;
       case 'messages':

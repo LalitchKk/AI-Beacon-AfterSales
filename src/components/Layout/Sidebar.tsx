@@ -8,7 +8,8 @@ import {
   CheckSquare, 
   Users, 
   MessageSquare,
-  Home
+  Home,
+  MessageCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
     { id: 'beacons', label: 'Beacon Management', icon: Radio },
     { id: 'tasks', label: 'Task Management', icon: CheckSquare },
     { id: 'accounts', label: 'Account Management', icon: Users },
+    { id: 'line-oa', label: 'LINE OA Management', icon: MessageCircle },
     { id: 'messages', label: 'Beacon Messages', icon: MessageSquare },
   ];
 

@@ -1,4 +1,4 @@
-import { Sale, Stock, BannerRequest, Beacon, Task, BeaconZone, BeaconMessage, Account } from '../types';
+import { Sale, Stock, BannerRequest, Beacon, Task, BeaconZone, BeaconMessage, Account, LineOA } from '../types';
 
 export const mockSales: Sale[] = [
   {
@@ -303,5 +303,81 @@ export const mockAccounts: Account[] = [
     createdDate: '2024-01-17',
     zoneCount: 0,
     createdFromSale: false
+  }
+];
+
+export const mockLineOAs: LineOA[] = [
+  {
+    id: 'LOA001',
+    accountId: 'ACC001',
+    accountName: 'TechCorp Ltd.',
+    lineOfficialAccountName: 'TechCorp Official',
+    lineBasicId: '@techcorp',
+    linePremiumId: '@techcorp-premium',
+    lineProviderId: 'PROV001',
+    lineProviderName: 'TechCorp Provider',
+    lineChannelId: '1234567890',
+    lineChannelSecret: 'abcdef1234567890abcdef1234567890',
+    status: 'active',
+    createdDate: '2024-01-15',
+    lastUpdated: '2024-01-17',
+    isVerified: true,
+    followerCount: 15420,
+    messagesSent: 2847,
+    notes: 'Primary corporate LINE OA for customer communications'
+  },
+  {
+    id: 'LOA002',
+    accountId: 'ACC002',
+    accountName: 'Retail Solutions Inc.',
+    lineOfficialAccountName: 'Retail Solutions Support',
+    lineBasicId: '@retailsolutions',
+    lineProviderId: 'PROV002',
+    lineProviderName: 'Retail Solutions Provider',
+    lineChannelId: '2345678901',
+    lineChannelSecret: 'bcdef1234567890abcdef1234567890a',
+    status: 'active',
+    createdDate: '2024-01-16',
+    lastUpdated: '2024-01-16',
+    isVerified: true,
+    followerCount: 8932,
+    messagesSent: 1456,
+    notes: 'Customer support and promotional messages'
+  },
+  {
+    id: 'LOA003',
+    accountId: 'ACC003',
+    accountName: 'Smart Mall Group',
+    lineOfficialAccountName: 'Smart Mall Connect',
+    lineBasicId: '@smartmall',
+    lineProviderId: 'PROV003',
+    lineProviderName: 'Smart Mall Provider',
+    lineChannelId: '3456789012',
+    lineChannelSecret: 'cdef1234567890abcdef1234567890ab',
+    status: 'pending',
+    createdDate: '2024-01-17',
+    lastUpdated: '2024-01-17',
+    isVerified: false,
+    followerCount: 0,
+    messagesSent: 0,
+    notes: 'Pending verification and setup'
+  },
+  {
+    id: 'LOA004',
+    accountId: 'ACC001',
+    accountName: 'TechCorp Ltd.',
+    lineOfficialAccountName: 'TechCorp Events',
+    lineBasicId: '@techcorp-events',
+    lineProviderId: 'PROV004',
+    lineProviderName: 'TechCorp Events Provider',
+    lineChannelId: '4567890123',
+    lineChannelSecret: 'def1234567890abcdef1234567890abc',
+    status: 'inactive',
+    createdDate: '2024-01-10',
+    lastUpdated: '2024-01-15',
+    isVerified: true,
+    followerCount: 3247,
+    messagesSent: 892,
+    notes: 'Secondary account for event notifications - currently inactive'
   }
 ];

@@ -91,3 +91,23 @@ export interface Account {
   createdFromSale?: boolean;
   saleId?: string;
 }
+
+export interface LineOA {
+  id: string;
+  accountId: string;
+  accountName: string;
+  lineOfficialAccountName: string;
+  lineBasicId: string;
+  linePremiumId?: string;
+  lineProviderId: string;
+  lineProviderName: string;
+  lineChannelId: string;
+  lineChannelSecret: string;
+  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  createdDate: string;
+  lastUpdated: string;
+  isVerified: boolean;
+  followerCount?: number;
+  messagesSent?: number;
+  notes?: string;
+}
